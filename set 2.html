@@ -1,0 +1,896 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Agentforce Quiz (Set 3)</title>
+
+<script src="https://cdn.tailwindcss.com"></script>
+
+<style>
+  body {
+    font-family: Inter, sans-serif;
+    background-color: #f8fafc;
+  }
+
+  #progress-bar {
+    transition: width 0.3s ease-in-out;
+  }
+
+  .option-radio { display: none; }
+
+  .option-label {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 16px;
+    border: 2px solid #cbd5e1;
+    border-radius: 10px;
+    cursor: pointer;
+    transition: 0.2s;
+  }
+
+  .option-label:hover {
+    border-color: #6366f1;
+  }
+
+  .option-radio:checked + .option-label {
+    background: #eef2ff;
+    border-color: #4f46e5;
+  }
+
+  .option-correct {
+    background: #ecfdf5 !important;
+    border-color: #10b981 !important;
+    color: #065f46;
+    font-weight: 600;
+  }
+
+  .option-incorrect {
+    background: #fff1f2 !important;
+    border-color: #ef4444 !important;
+    color: #7f1d1d;
+    font-weight: 600;
+  }
+
+  .nav-button:disabled {
+    background: #cbd5f5;
+    cursor: not-allowed;
+  }
+
+  .q-btn {
+    width: 42px;
+    height: 42px;
+    border-radius: 8px;
+    border: 2px solid #cbd5e1;
+    font-weight: 600;
+    transition: 0.2s;
+  }
+
+  .q-btn.active {
+    border-color: #4f46e5;
+    background: #eef2ff;
+  }
+
+  .q-btn.correct {
+    background: #10b981;
+    color: white;
+    border-color: #10b981;
+  }
+
+  .q-btn.wrong {
+    background: #ef4444;
+    color: white;
+    border-color: #ef4444;
+  }
+</style>
+</head>
+
+<body class="flex justify-center min-h-screen p-6">
+
+<div class="w-full max-w-2xl bg-white p-8 rounded-xl shadow-lg">
+
+<h1 class="text-3xl font-bold text-center mb-6">Agentforce Specialist Quiz (Set 3)</h1>
+
+<div class="mb-6">
+  <p id="progress-text" class="text-sm text-slate-600 mb-2"></p>
+  <div class="bg-slate-200 h-2.5 rounded-full">
+    <div id="progress-bar" class="bg-indigo-600 h-2.5 rounded-full"></div>
+  </div>
+</div>
+
+<p id="question-text" class="text-lg font-semibold mb-6"></p>
+
+<div id="options-container" class="space-y-3"></div>
+
+<div id="explanation-area" class="hidden mt-6 border-t pt-5">
+  <h3 id="feedback-text" class="text-2xl font-bold mb-3"></h3>
+  <p class="font-semibold text-sm text-slate-600">Correct Answer</p>
+  <p id="correct-answer-text" class="p-3 bg-emerald-50 rounded-lg mb-4"></p>
+  <p class="font-semibold text-sm text-slate-600">Explanation</p>
+  <p id="explanation-text"></p>
+</div>
+
+<div class="mt-8 flex justify-end gap-3">
+  <button id="submit-button" class="nav-button bg-indigo-600 text-white px-6 py-3 rounded-lg font-semibold">
+    Submit Answer
+  </button>
+  <button id="next-button" class="nav-button hidden bg-indigo-600 text-white px-6 py-3 rounded-lg font-semibold">
+    Next Question
+  </button>
+</div>
+
+<!-- Question Grid -->
+<div class="mt-8">
+  <h3 class="font-semibold mb-3">Question Navigator</h3>
+  <div id="question-grid" class="grid grid-cols-6 gap-2"></div>
+</div>
+
+</div>
+
+<script>
+const quizData = [
+            {
+                question: "Universal Containers has a requirement to provide a sales summary for its sales reps who are using Employee Agents, but they are not happy with the default answer. Which best practice should the Agentforce Specialist recommend?",
+                options: [
+                    "A. Update the standard record summary action.",
+                    "B. Create a Record Summary custom prompt template.",
+                    "C. Create a Knowledge Answer custom prompt template."
+                ],
+                correctAnswer: "B. Create a Record Summary custom prompt template.",
+                explanation: "To customize a 'default answer' like a sales summary for an Employee Agent, the best practice is to create a new 'Record Summary' custom prompt template. This allows you to define exactly what information is included and how it's formatted, overriding the generic default."
+            },
+            {
+                question: "Universal Containers (UC) is struggling to follow up with thousands of new leads from a trade show. Leadership wants to qualify leads 24/7, provide accurate answers, automatically book meetings, and free up reps. Which Agentforce capability should UC implement?",
+                options: [
+                    "A. Commerce Agent",
+                    "B. Sales Coach",
+                    "C. SDR Agent"
+                ],
+                correctAnswer: "C. SDR Agent",
+                explanation: "This scenario perfectly describes the function of a Sales Development Representative (SDR) Agent. Its core purpose is to handle top-of-funnel sales tasks like lead qualification, nurturing, answering prospect questions, and booking meetings, all at scale."
+            },
+            {
+                question: "An Agentforce Specialist is creating a custom agent action. The topic is selected correctly, but the action is not. Which setting should the Agentforce Specialist test and iterate on?",
+                options: [
+                    "A. Action Instructions",
+                    "B. Classification Description",
+                    "C. Action Scope"
+                ],
+                correctAnswer: "A. Action Instructions",
+                explanation: "If the *topic* is correct, the reasoning engine understood the user's general intent. If the *action* is wrong, the engine is failing at the next step: choosing *which* action within that topic to use. The 'Action Instructions' are what the engine reads to make this decision, so they need to be clearer."
+            },
+            {
+                question: "Universal Containers' service team wants to customize the standard case summary response from Agentforce. What should the Agentforce Specialist do to achieve this?",
+                options: [
+                    "A. Customize the standard Record Summary template for the Case object.",
+                    "B. Summarize the Case with a standard agent action.",
+                    "C. Create a custom Record Summary prompt template for the Case object."
+                ],
+                correctAnswer: "C. Create a custom Record Summary prompt template for the Case object.",
+                explanation: "Similar to customizing a sales summary, the correct way to *customize* the standard case summary is to create a *new* 'Record Summary' prompt template. You then associate this new template with the Case object, overriding the default summary."
+            },
+            {
+                question: "Universal Containers (UC) is considering using a Field Generation prompt template type. What should UC check before creating the prompt to ensure it is possible for the field to be enabled for generative AI?",
+                options: [
+                    "A. That the org is set to API version 59 or higher",
+                    "B. That the Lightning page layout where the field will reside has been upgraded to Dynamic Forms",
+                    "C. That the field chosen is a rich text field with 255 characters or more"
+                ],
+                correctAnswer: "A. That the org is set to API version 59 or higher",
+                explanation: "Field Generation prompt templates were introduced in a specific Salesforce release. This functionality relies on an underlying API version, and checking that the org is on API version 59 or higher is a key technical prerequisite."
+            },
+            {
+                question: "Universal Containers wants to systematically validate agent responses before deployment using a scalable testing process. Which Testing Center approach should the company implement?",
+                options: [
+                    "A. Use pilot users in production to flag incorrect responses post launch.",
+                    "B. Manually interact with the agent in Builder until responses seem correct.",
+                    "C. Upload a structured CSV test template and run batch test cases in Testing Center."
+                ],
+                correctAnswer: "C. Upload a structured CSV test template and run batch test cases in Testing Center.",
+                explanation: "The keywords are 'systematically' and 'scalable'. Manually testing (B) isn't scalable. Testing in production (A) isn't systematic validation. The 'Testing Center' is designed for this exact purpose, allowing you to 'upload a structured CSV' and run 'batch test cases' for repeatable, scalable validation."
+            },
+            {
+                question: "Universal Containers (UC) needs to create a custom prompt template that can be called from a Lightning web component. Which prompt template type should UC create?",
+                options: [
+                    "A. Flex",
+                    "B. Field Generation",
+                    "C. Sales Email"
+                ],
+                correctAnswer: "A. Flex",
+                explanation: "'Flex' prompt templates are the 'flexible', general-purpose templates. They are designed to be called programmatically from Apex, Flow, or a Lightning Web Component, which is exactly what this scenario requires."
+            },
+            {
+                question: "An Agentforce Specialist wants to troubleshoot an agent that is hallucinating weblinks... The agent uses a prompt template with a knowledge retriever. Which process is appropriate to find the root cause?",
+                options: [
+                    "A. Examine the topic name and classification description for hallucination guardrails.",
+                    "B. Examine the prompt instructions and contents of the chunks shown in the resolved prompt output.",
+                    "C. Examine the topic instructions and ensure the word \"ALWAYS\" is used in the hallucination guardrails."
+                ],
+                correctAnswer: "B. Examine the prompt instructions and contents of the chunks shown in the resolved prompt output.",
+                explanation: "A hallucination is an incorrect output from the LLM. In a RAG (Retrieval-Augmented Generation) setup, the LLM's output is based on two inputs: (1) the 'prompt instructions' and (2) the 'contents of the chunks' (the retrieved data). The root cause *must* be in one of these two places, which you can see in the 'resolved prompt output'."
+            },
+            {
+                question: "Universal Containers wants to keep retrieval accurate as product documentation changes frequently. Which approach should the company implement?",
+                options: [
+                    "A. Manually delete the stale data chunks.",
+                    "B. Rebuild the search index.",
+                    "C. Leave embeddings unchanged even if content is updated."
+                ],
+                correctAnswer: "B. Rebuild the search index.",
+                explanation: "When source documents change, the 'search index' (which contains the data chunks and their vector embeddings) becomes outdated. To keep retrieval accurate, you must 'rebuild the search index' so it reflects the new, correct content."
+            },
+            {
+                question: "An Agentforce Specialist needs to create a prompt template that extracts the customer's name, phone number, and case number from a block of text, and nothing else. How should the Specialist structure the prompt to ensure the LLM doesn't include extra conversation?",
+                options: [
+                    "A. Ask the LLM to extract and only output the important information in the text.",
+                    "B. Ensure in the prompt that the LLM has been told to only use name value pairs in the response.",
+                    "C. Use well-defined output instructions and provide desired output examples."
+                ],
+                correctAnswer: "C. Use well-defined output instructions and provide desired output examples.",
+                explanation: "This is a core prompt engineering technique for forcing a specific output format. You must be explicit. 'Well-defined output instructions' (e.g., 'Format as JSON') and 'providing desired output examples' (few-shot learning) are the most effective ways to control the LLM's response and prevent conversational text."
+            },
+            {
+                question: "Universal Containers' administrator has developed a new agent in a sandbox environment and now wants to deploy it to production. What should the administrator do to deploy an agent?",
+                options: [
+                    "A. Export agent components as JSON files and manually import them into production using the Metadata API.",
+                    "B. Manually recreate the agent configuration, topics, and actions in production because change sets cannot be used.",
+                    "C. Create an outbound change set with all the necessary agent components, then upload to production."
+                ],
+                correctAnswer: "C. Create an outbound change set with all the necessary agent components, then upload to production.",
+                explanation: "Agentforce components (like the 'genAiPlannerBundle') are part of the Metadata API. This means they are fully compatible with standard Salesforce deployment tools, including 'outbound change sets'."
+            },
+            {
+                question: "What should UC consider when adding a related list on the Account object to be used in the prompt template?",
+                options: [
+                    "A. After selecting a related list from the Account, use the field picker to choose merge fields in Prompt Builder.",
+                    "B. Prompt Builder must be used to assign the fields from the related list as a JSON format.",
+                    "C. The fields for the related list are based on the default page layout of the Account for the current user."
+                ],
+                correctAnswer: "A. After selecting a related list from the Account, use the field picker to choose merge fields in Prompt Builder.",
+                explanation: "This describes the user interface flow for Prompt Builder. When you add a related list for grounding, you don't get all fields by default. You 'use the field picker' to select *which* specific fields from that related list you want to make available as 'merge fields' in your prompt."
+            },
+            {
+                question: "An administrator deployed a new agent from sandbox to production. The agent uses a prompt template that invokes a Salesforce flow... In production, the agent fails every time the flow is supposed to run. What is the most likely cause?",
+                options: [
+                    "A. The change set did not include the dependent Apex classes for the flow.",
+                    "B. The user in production does not have permission to run the flow.",
+                    "C. The flow was not manually activated in the production org after the deployment."
+                ],
+                correctAnswer: "C. The flow was not manually activated in the production org after the deployment.",
+                explanation: "This is a very common Salesforce deployment error. For safety, Flows (and Agents) are deployed in an *inactive* state. The administrator must go into the Flow Builder in production and 'manually activate' the flow after the deployment is complete."
+            },
+            {
+                question: "An Agentforce Specialist is building a Flex prompt template. Which best practice should the Specialist follow when creating the Flex prompt template?",
+                options: [
+                    "A. Provide the large language model (LLM) with contextual information and give it a role such as a sales or support rep.",
+                    "B. Ground the large language model (LLM) with a retriever and create a custom field to store the LLM generated response.",
+                    "C. Ground the large language model (LLM) with account data and create a custom field account summary to store the LLM-generated response."
+                ],
+                correctAnswer: "A. Provide the large language model (LLM) with contextual information and give it a role such as a sales or support rep.",
+                explanation: "This is a fundamental prompt engineering best practice (often called RTCCF - Role, Task, Context, Constraints, Format). Giving the LLM a 'role' (e.g., 'You are a helpful sales rep') and 'contextual information' (e.g., the Account record) is key to getting a high-quality, relevant response."
+            },
+            {
+                question: "Universal Containers deploys a new Agentforce Service Agent... but is getting feedback that the Service Agent is not providing answers to... Salesforce Knowledge articles. What is the likely issue?",
+                options: [
+                    "A. The Agentforce Service Agent user is not assigned the correct Agent Type License.",
+                    "B. The Agentforce Service Agent user was not given the Allow View Knowledge permission set.",
+                    "C. The Agentforce Service Agent user needs to be created under the standard Agent Knowledge profile."
+                ],
+                correctAnswer: "B. The Agentforce Service Agent user was not given the Allow View Knowledge permission set.",
+                explanation: "The agent runs as a specific 'Agentforce Service Agent user'. Just like a human user, this agent user must have the correct permissions to see data. To read Knowledge articles, it needs the 'Allow View Knowledge' permission."
+            },
+            {
+                question: "Before activating a custom agent action, an Agentforce Specialist would like to evaluate multiple real-world user utterances to ensure the action is being selected appropriately. Which tool should the Specialist recommend?",
+                options: [
+                    "A. Agentforce Builder",
+                    "B. Prompt Builder",
+                    "C. Testing Center"
+                ],
+                correctAnswer: "C. Testing Center",
+                explanation: "The 'Agentforce Builder' is for building. The 'Testing Center' is the specific tool designed to 'evaluate multiple real-world user utterances' (e.g., via a batch test or synthetic utterances) to validate the agent's behavior and action selection *before* activation."
+            },
+            {
+                question: "What is automatically created when a search index is created in Data Cloud?",
+                options: [
+                    "A. A dynamic retriever to allow runtime selection of retriever parameters...",
+                    "B. A predefined Apex retriever class that can be edited by a developer...",
+                    "C. A default retriever that shares the name of the custom search index"
+                ],
+                correctAnswer: "C. A default retriever that shares the name of the custom search index",
+                explanation: "As a convenience, when you create a new 'search index' in Data Cloud, the system 'automatically creates a default retriever' with the same name. This gives you an immediate, out-of-the-box way to start using that index in your prompts."
+            },
+            {
+                question: "What does it mean when a prompt template version is described as immutable?",
+                options: [
+                    "A. Only the latest version of a template can be activated.",
+                    "B. Every modification on a template will be saved as a new version automatically.",
+                    "C. After a prompt template version is activated, no further changes can be saved to that version."
+                ],
+                correctAnswer: "C. After a prompt template version is activated, no further changes can be saved to that version.",
+                explanation: "'Immutable' means 'unchangeable'. For governance and stability, once a prompt template 'version is activated', it is locked. You cannot make 'further changes... to that version'. To make changes, you must create a new version."
+            },
+            {
+                question: "Coral Cloud Resorts (CCR) sees the agent forgot the dietary/activity preferences gathered earlier. They need those preferences to persist throughout the session. What should CCR implement?",
+                options: [
+                    "A. Create a context variable to capture/store customer preferences as action outputs.",
+                    "B. Rely on natural conversation memory and instruct the agent to look back.",
+                    "C. Configure custom variables to capture/store customer preferences from action outputs."
+                ],
+                correctAnswer: "C. Configure custom variables to capture/store customer preferences from action outputs.",
+                explanation: "The agent's 'natural conversation memory' (B) is short-term and unreliable for this. To make data 'persist throughout the session', you must explicitly 'capture/store' it in 'custom variables' (or 'context variables' - the terms are often used interchangeably, but C is the marked answer)."
+            },
+            {
+                question: "Coral Cloud Resorts is implementing Agentforce retrieval. Customers sometimes type ambiguous terms (for example, 'package' could mean vacation package or baggage). Which retrieval strategy best balances precision and contextual disambiguation?",
+                options: [
+                    "A. Use hybrid search, which combines keyword matching for precision with semantic embeddings for context.",
+                    "B. Use keyword search only, which prioritizes exact term matching but risks missing contextual meaning.",
+                    "C. Use semantic search only, which captures intent but may struggle with ambiguous terms when no context is provided."
+                ],
+                correctAnswer: "A. Use hybrid search, which combines keyword matching for precision with semantic embeddings for context.",
+                explanation: "This is the classic use case for 'hybrid search'. An ambiguous term like 'package' requires 'semantic... context' to understand. However, a specific package name (like 'Deluxe_Suite_Pkg_2025') requires 'keyword matching for precision'. Hybrid search combines both."
+            },
+            {
+                question: "Coral Cloud Resorts is about to start testing its concierge agent with guests. Which metrics should be captured to monitor the performance, correctness, and user experience?",
+                options: [
+                    "A. Response performance, tone, and CSATs",
+                    "B. Response times, accuracy and relevance of answers, and resolution success",
+                    "C. Agent performance, token usage, and conversation duration"
+                ],
+                correctAnswer: "B. Response times, accuracy and relevance of answers, and resolution success",
+                explanation: "This option best maps to the three requirements: 'Performance' = 'Response times', 'Correctness' = 'accuracy and relevance of answers', and 'User Experience' = 'resolution success'."
+            },
+            {
+                question: "An Agentforce Specialist (using no-code tools only) wants to prep a sales team by summarizing past purchases, displaying Data Cloud interest, and recapping conversations. What is the recommended approach?",
+                options: [
+                    "A. Deploy UC's own custom foundational model on this data first.",
+                    "B. Use a prompt template grounded on CRM and Data Cloud data using standard foundation models.",
+                    "C. Fine-tune the standard foundational model due to the complexity of the data."
+                ],
+                correctAnswer: "B. Use a prompt template grounded on CRM and Data Cloud data using standard foundation models.",
+                explanation: "This is a classic RAG (Retrieval-Augmented Generation) use case. The 'no-code' way to achieve this is with a 'prompt template' that is 'grounded' (gets data from) the relevant 'CRM and Data Cloud data' sources. No fine-tuning (C) or custom model (A) is needed."
+            },
+            {
+                question: "Universal Containers has a custom agent action calling a flow to retrieve the real-time status of an order... For the given flow, what should the Agentforce Specialist consider about the running user's data access?",
+                options: [
+                    "A. The custom action adheres to the permissions, field level security, and sharing settings configured in the flow.",
+                    "B. The agent will always run flows in system mode so the running user's data access will not affect the data returned.",
+                    "C. The flow must have the 'with sharing' permission selected... for the permissions... to be respected."
+                ],
+                correctAnswer: "A. The custom action adheres to the permissions, field level security, and sharing settings configured in the flow.",
+                explanation: "The agent runs as a specific user. When it calls a flow, that flow's execution context (e.g., 'User or System Context') and the running user's permissions all apply. The action must 'adhere to the permissions, field level security, and sharing settings' to be successful."
+            },
+            {
+                question: "Universal Containers has created an Employee Agent. Which step should an Agentforce Specialist take to connect the agent with a Slack channel?",
+                options: [
+                    "A. Create an embedded service deployment and connection between Salesforce and the Slack workspace.",
+                    "B. Create an Omni Channel flow and connection between Salesforce and the Slack workspace.",
+                    "C. Create a connection between Salesforce and the Slack workspace."
+                ],
+                correctAnswer: "C. Create a connection between Salesforce and the Slack workspace.",
+                explanation: "This is the fundamental first step. Before an agent can be used in Slack, the Salesforce org and the Slack workspace must be linked. This is done by establishing the 'Salesforce for Slack' app 'connection'."
+            },
+            {
+                question: "When is the Agent to Agent (A2A) protocol an appropriate communication choice?",
+                options: [
+                    "A. When agents need to invoke third party API",
+                    "B. When agents need to collaborate",
+                    "C. When agents need to access tools"
+                ],
+                correctAnswer: "B. When agents need to collaborate",
+                explanation: "The A2A (Agent-to-Agent) protocol is an open standard specifically designed to allow different AI 'agents' to 'collaborate', discover each other, and communicate to solve complex tasks."
+            },
+            {
+                question: "Coral Cloud Resorts wants to cover a broad range of user phrasing when testing its FAQ agent. Which Testing Center feature meets that need?",
+                options: [
+                    "A. Uploading only a small set of manually written prompts",
+                    "B. Relying on live customer logs to capture phrasing diversity after deployment",
+                    "C. AI-generated synthetic test utterances based on natural language variations"
+                ],
+                correctAnswer: "C. AI-generated synthetic test utterances based on natural language variations",
+                explanation: "To cover a 'broad range of user phrasing', manually writing prompts (A) is inefficient. The 'Testing Center' has a specific feature to use AI to 'generate synthetic test utterances' based on a few examples, giving you broad 'natural language' coverage."
+            },
+            {
+                question: "Universal Containers (UC) wants to empower its marketing team with Al capabilities that help employees quickly find campaign data, generate creative content, and manage project tasks. Which Al solution should UC implement?",
+                options: [
+                    "A. Employee Agent",
+                    "B. Service Agent",
+                    "C. Sales Coach Agent"
+                ],
+                correctAnswer: "A. Employee Agent",
+                explanation: "The scenario describes an internal-facing agent for the 'marketing team' (i.e., 'employees'). Its purpose is to help them with their jobs ('find campaign data, generate content'). This is the exact use case for an 'Employee Agent'."
+            },
+            {
+                question: "Universal Containers has PDF maintenance guides in an external folder... The team wants a standard, clicks-only setup for the Service Agent to use these documents. Which approach should the Specialist implement?",
+                options: [
+                    "A. Configure Data Cloud to ingest file attachments and create custom index and retriever...",
+                    "B. Upload the PDFs as File source in the Agentforce Data Library which will build a Search Index, and create a retriever...",
+                    "C. Paste external PDF links into topic instructions and rely on the model to follow them..."
+                ],
+                correctAnswer: "B. Upload the PDFs as File source in the Agentforce Data Library which will build a Search Index, and create a retriever...",
+                explanation: "This is the standard, 'clicks-only' process. The 'Agentforce Data Library' provides a UI to 'Upload the PDFs as File source'. This action automatically 'builds a Search Index' and makes the files available to a 'retriever'."
+            },
+            {
+                question: "What is best practice when considering retrieval-augmented generation (RAG) for information that may contain personally identifiable information (PII)?",
+                options: [
+                    "A. Depend on the agent's prompt to avoid exposing PII.",
+                    "B. Encrypt embeddings, but still index PII records.",
+                    "C. Mask sensitive fields and index only non-PII data."
+                ],
+                correctAnswer: "C. Mask sensitive fields and index only non-PII data.",
+                explanation: "This is a critical security best practice. You should *never* put PII (Personally Identifiable Information) into a vector database. The correct approach is to 'mask sensitive fields' or remove them entirely *before* the data is indexed."
+            },
+            {
+                question: "A developer is using the Salesforce CLI to deploy agent components... Which metadata component should the developer include in their package.xml file that contains all of the topics and actions an agent will interact with?",
+                options: [
+                    "A. EinsteinAiPlannerBundle",
+                    "B. genAiPlannerBundle",
+                    "C. BotBundle"
+                ],
+                correctAnswer: "B. genAiPlannerBundle",
+                explanation: "This is the specific name of the Metadata API component for Agentforce. The 'genAiPlannerBundle' contains the agent's 'plan', which includes all its topics, actions, and instructions."
+            },
+            {
+                question: "A verified customer... wants to upgrade my service plan... The agent needs to verify identity, create a new quote, calculate a prorated amount, and escalate to an AE... Which type of agent should be built?",
+                options: [
+                    "A. Employee Agent to orchestrate internal logistics and finance",
+                    "B. Service Agent to resolve the case end-to-end and create a new opportunity...",
+                    "C. Sales Agent to handle the upsell and large-deal escalation"
+                ],
+                correctAnswer: "C. Sales Agent",
+                explanation: "Although the interaction starts as a 'service' request, the key actions are 'create a new quote', 'calculate a prorated upgrade amount' (upsell), and 'large-deal escalation'. These are all core *sales* functions, making 'Sales Agent' the best fit."
+            },
+            {
+                question: "Which statement explains why a company might prefer a hybrid search index in Data Cloud for Agentforce?",
+                options: [
+                    "A. Vector embeddings in hybrid search are prefiltered by keyword matches, reducing computational overhead...",
+                    "B. Hybrid search indexes support both literal keyword matches and semantic recall, useful when queries mix specific terms and intent.",
+                    "C. Hybrid search indexes process queries faster than vector search because they eliminate the need for semantic embedding."
+                ],
+                correctAnswer: "B. Hybrid search indexes support both literal keyword matches and semantic recall, useful when queries mix specific terms and intent.",
+                explanation: "This is the definition of hybrid search. It's 'useful when queries mix specific terms' (which need 'literal keyword matches') and general 'intent' (which needs 'semantic recall'). It combines the best of both worlds."
+            },
+            {
+                question: "What is the purpose of applying filters in a custom retriever configuration?",
+                options: [
+                    "A. Filters automatically encrypt and mask sensitive fields in the search index...",
+                    "B. Filters reformat and aggregate multiple documents into a single summary output...",
+                    "C. Filters narrow the search results by applying up to 10 conditions based on fields defined in the search index..."
+                ],
+                correctAnswer: "C. Filters narrow the search results by applying up to 10 conditions based on fields defined in the search index, thereby enhancing the relevancy of the content returned.",
+                explanation: "This is the function of retriever filters. They are 'pre-filters' that 'narrow the search results' *before* the semantic search happens. This enhances relevancy by ensuring the search only runs on data that meets the conditions (e.g., `Status = 'Active'`)."
+            },
+            {
+                question: "UC wants its agent to verify a customer's identity before providing case information. The verification must be deterministic. Which approach best meets this requirement?",
+                options: [
+                    "A. Use keywords such as \"Always\" and \"Never\" to write clear logic in Topic Instructions...",
+                    "B. Store the verification status in a custom variable and set a global instruction that the agent should check this...",
+                    "C. Create a variable to store the verification status, set it as output from a \"Verify Identity\" action, and apply a filter so any case-related actions only run when the variable confirms verification."
+                ],
+                correctAnswer: "C. Create a variable to store the verification status, set it as output from a \"Verify Identity\" action, and apply a filter so any case-related actions only run when the variable confirms verification.",
+                explanation: "This is another 'deterministic' control question. You cannot use instructions (A, B) for rules that *must* be followed. The only deterministic method is to use a 'variable' (to store the status) and a 'conditional filter' on the sensitive actions. The filter ensures the case actions *cannot run* until verification is confirmed."
+            },
+            {
+                question: "Universal Containers wants to allow its service agents to query the current fulfillment status of an order... There is an existing autolaunched flow to query the information from Oracle ERP. How should an Agentforce Specialist apply conversational Al?",
+                options: [
+                    "A. Configure the Integration Flow standard action in Agent Builder.",
+                    "B. Create a custom agent action which calls a flow.",
+                    "C. Create a Flex prompt template in Prompt Builder."
+                ],
+                correctAnswer: "B. Create a custom agent action which calls a flow.",
+                explanation: "The agent needs to use an 'existing autolaunched flow'. The standard way to do this is to 'create a custom agent action' and configure that action to 'call' the existing 'flow'. This exposes the flow's functionality to the agent."
+            },
+            {
+                question: "Users have reported that the generated case summaries are not returning the appropriate information. What is a possible explanation for the poor prompt performance?",
+                options: [
+                    "A. The prompt template version is incompatible with the chosen large language model (LLM).",
+                    "B. The Einstein Trust Layer is incorrectly configured.",
+                    "C. The data being used for grounding is incorrect or incomplete."
+                ],
+                correctAnswer: "C. The data being used for grounding is incorrect or incomplete.",
+                explanation: "If a summary prompt is returning 'not the appropriate information', it's a RAG (Retrieval-Augmented Generation) problem. The LLM is likely working, but the 'data being used for grounding' (the data being fed *into* the prompt) is 'incorrect or incomplete'. The retriever is fetching the wrong fields or records."
+            },
+            {
+                question: "UC wants... an Agentforce Service Agent that provides the latest, active, and relevant policy... information... grounded on published knowledge... Knowledge updates to be reflected immediately without manual reconfiguration. What should UC do?",
+                options: [
+                    "A. Enable the agent to search all internal records and past customer inquiries.",
+                    "B. Set up an Agentforce Data Library to store and index policy documents for Al retrieval.",
+                    "C. Manually add policy responses into the Al model to prevent hallucinations."
+                ],
+                correctAnswer: "B. Set up an Agentforce Data Library to store and index policy documents for Al retrieval.",
+                explanation: "This is the standard, out-of-the-box way to ground an agent on Knowledge articles and files. The 'Agentforce Data Library' is designed to 'store and index' these documents, making them available for 'AI retrieval'. Re-indexing the library reflects updates."
+            },
+            {
+                question: "Universal Containers (UC) is setting up a new Agentforce Service Agent. The company has sensitive medical product research stored internally and wants to ensure the agent cannot access it. What should UC do?",
+                options: [
+                    "A. Follow the principle of least privilege and avoid granting permission to view the Medical Product object or related fields.",
+                    "B. Disable the Agentforce Service Agent's ability to use any Salesforce custom object or related fields.",
+                    "C. Assign the Agentforce Service Agent user the lowest possible role in the organization's hierarchy to block access."
+                ],
+                correctAnswer: "A. Follow the principle of least privilege and avoid granting permission to view the Medical Product object or related fields.",
+                explanation: "This is a core Salesforce security principle. The agent runs as a user. To 'ensure the agent cannot access' the 'Medical Product' object, you simply 'follow the principle of least privilege' and do not grant its user profile/permission set 'permission' to see that object or its fields."
+            },
+            {
+                question: "Universal Containers (UC) plans to answer questions based on similar cases that have been successfully resolved in the past. What should UC consider when implementing this approach?",
+                options: [
+                    "A. No action is needed, as past cases are used to answer the question.",
+                    "B. Create a data model object (DMO) based on Case object and create an index on it.",
+                    "C. Create an unstructured data model object (UDMO) based on Case object and create an index on it."
+                ],
+                correctAnswer: "B. Create a data model object (DMO) based on Case object and create an index on it.",
+                explanation: "To use *structured* Salesforce records (like the 'Case' object) for RAG, you must first bring them into Data Cloud. This involves creating a 'data model object (DMO)' from the 'Case' object, and then building a search 'index on it'. (C is wrong because 'Case' is structured data, not unstructured)."
+            },
+            {
+                question: "CK is deploying a prompt template that uses its own large language model (BYOLLM)... from a sandbox to a production org, and is receiving an error... What is the cause of the error?",
+                options: [
+                    "A. The prompt does not specify that it is a custom LLM.",
+                    "B. BYOLLM is not yet supported for in prompt templates in production.",
+                    "C. The name of the LLM does not match in sandbox and production."
+                ],
+                correctAnswer: "C. The name of the LLM does not match in sandbox and production.",
+                explanation: "The BYOLLM (Bring Your Own LLM) is referenced by its 'name' in the prompt template's metadata. This LLM connection must be set up *separately* in production. If the 'name' in production doesn't match the 'name' used in the sandbox, the deployment will fail."
+            },
+            {
+                question: "Universal Containers (UC) is building a Flex prompt template. UC needs to use data returned by the flow in the prompt template. Which flow element should UC use?",
+                options: [
+                    "A. Add Flex Instructions",
+                    "B. Add Flow Instructions",
+                    "C. Add Prompt Instructions"
+                ],
+                correctAnswer: "C. Add Prompt Instructions",
+                explanation: "This is a specific element in Flow Builder. When a flow is invoked *by a prompt*, you use the 'Add Prompt Instructions' element within the flow to pass data *back* to the prompt template, where it can be used as merge fields."
+            },
+            {
+                question: "Universal Containers (UC) needs to create a prompt template that provides a detailed product description based on the latest product data... for use in marketing materials. Which prompt template type should UC use?",
+                options: [
+                    "A. Sales Email",
+                    "B. Field Generation",
+                    "C. Record Summary"
+                ],
+                correctAnswer: "B. Field Generation",
+                explanation: "The requirement is to create a 'detailed product description' - likely for a single field - to 'ensure consistency and accuracy'. This is the perfect use case for a 'Field Generation' prompt, which is designed to populate a single field based on a record's data."
+            },
+            {
+                question: "What is the role of the large language model (LLM) in understanding intent and executing an agent action?",
+                options: [
+                    "A. Determine a user's topic access and sort actions by priority to be executed.",
+                    "B. Find similar requested topics and provide the actions that need to be executed.",
+                    "C. The LLM selects the right topic and action... and the correct order... If there are no matches, the LLM attempts to answer the user's request."
+                ],
+                correctAnswer: "C. The LLM selects the right topic and action... and the correct order... If there are no matches, the LLM attempts to answer the user's request.",
+                explanation: "This is the most complete description. The 'LLM' (as the reasoning engine) 'selects the right topic', then the 'action(s)' and 'correct order'. If it can't find a match, it falls back to a standard generative 'answer to the user's request'."
+            },
+            {
+                question: "What is an Agentforce Specialist able to do when the 'Enrich event logs with conversation data' setting in the Agentforce configuration is enabled?",
+                options: [
+                    "A. Generate details reports on all agent conversations over any time period.",
+                    "B. View session data including user input and agent responses for sessions.",
+                    "C. View the user click path that led to each agent action."
+                ],
+                correctAnswer: "B. View session data including user input and agent responses for sessions.",
+                explanation: "This setting does exactly what its name says: it 'enriches' the technical 'event logs' by adding the 'conversation data'. This allows the Specialist to 'view... user input and agent responses' for troubleshooting."
+            },
+            {
+                question: "Universal Containers needs to create Data Cloud reports to understand agent behavior. Which data lake object (DLO) represents an overarching container capturing contiguous interactions with one or more Al agents?",
+                options: [
+                    "A. AIAgentInteractionMessage",
+                    "B. AIAgentSession",
+                    "C. AIAgentInteraction"
+                ],
+                correctAnswer: "B. AIAgentSession",
+                explanation: "This is a Data Cloud schema question. The 'AIAgentSession' DLO is the 'overarching container' object. It represents the entire 'contiguous interaction' (a single conversation) from start to finish."
+            },
+            {
+                question: "Sales reps at Universal Containers should not be able to create or edit prompt templates. Which permission set should an Agentforce Specialist assign to the sales reps?",
+                options: [
+                    "A. Prompt Execute User",
+                    "B. Prompt Template Manager",
+                    "C. Prompt Template User"
+                ],
+                correctAnswer: "A. Prompt Execute User",
+                explanation: "'Prompt Template Manager' (B) creates/edits. 'Prompt Template User' (C) can see and select templates. 'Prompt Execute User' (A) is the most basic, 'least privilege' permission, allowing a user to *only* run/execute prompts. This is the correct choice."
+            },
+            {
+                question: "An Agentforce Specialist is creating a custom action in Agentforce. Which option is available for the Agentforce Specialist to choose for the custom agent action?",
+                options: [
+                    "A. SOQL",
+                    "B. Flows",
+                    "C. Apex trigger"
+                ],
+                correctAnswer: "B. Flows",
+                explanation: "When you build a 'custom agent action' in the Agentforce Builder, the primary out-of-the-box (no-code) option to define its logic is to have it call 'Flows'. (You can also call Apex, but 'Flows' is the listed declarative option)."
+            },
+            {
+                question: "Universal Containers (UC) needs to capture and store detailed interaction data... including reasoning engine executions, actions, prompt and gateway inputs/outputs, error messages, and final responses. Which feature should help?",
+                options: [
+                    "A. Agentforce Session Tracing",
+                    "B. Utterance Analysis",
+                    "C. Agentforce Analytics"
+                ],
+                correctAnswer: "A. Agentforce Session Tracing",
+                explanation: "This is the exact definition of 'Agentforce Session Tracing'. It's the deep-level debugger that provides a 'full view of the agent's behavior from start to finish', including all technical details like 'reasoning engine executions', 'prompt inputs/outputs', and 'error messages'."
+            },
+            {
+                question: "Universal Containers has multiple Salesforce orgs... a verification agent must pass customer identity data to downstream agents... The customer ID must remain secure and persistent... without exposure to LLM modification. What is the most appropriate configuration?",
+                options: [
+                    "A. Store customer identity information in conversation variables created by the first agent...",
+                    "B. Use the Agent API to start the downstream agent's session and pass the verified customer ID as a read-only context variable...",
+                    "C. Implement a custom object to temporarily store verification status..."
+                ],
+                correctAnswer: "B. Use the Agent API to start the downstream agent's session and pass the verified customer ID as a read-only context variable...",
+                explanation: "This is a complex multi-agent handoff. To pass data securely ('without exposure to LLM modification'), you 'use the Agent API' to initiate the next agent's session and 'pass the... ID as a read-only context variable'. This 'ensures security and prevents LLM alteration'."
+            },
+            {
+                question: "In the context of retriever and search indexes, what best describes the data preparation process in Data Cloud?",
+                options: [
+                    "A. Data preparation entails aggregating, normalizing, and encoding structured datasets...",
+                    "B. Data preparation focuses on real time data ingestion and dynamic indexing...",
+                    "C. Data preparation involves loading, chunking, vectorizing, and storing content in a search-optimized manner to support retrieval from the vector database."
+                ],
+                correctAnswer: "C. Data preparation involves loading, chunking, vectorizing, and storing content in a search-optimized manner to support retrieval from the vector database.",
+                explanation: "This is the definition of the RAG data pipeline. The 'data preparation' process consists of 'loading' the source documents, 'chunking' (splitting) them, 'vectorizing' (turning chunks into number-embeddings), and 'storing' them in the 'vector database' for retrieval."
+            },
+            {
+                question: "UC wants to deploy an Agentforce Service Agent to support customers via a web experience... using Messaging for In-App and Web... The customer needs to pass the membership number to the agent... What is a required step?",
+                options: [
+                    "A. Configure a messaging Lightning web component using standard or custom Lightning Type...",
+                    "B. Configure MuleSoft to establish a secure API tunnel between the agent and the Digital Experience site.",
+                    "C. Create an Omni-Channel flow that routes messages to the agent."
+                ],
+                correctAnswer: "C. Create an Omni-Channel flow that routes messages to the agent.",
+                explanation: "To connect a 'Messaging for In-App and Web' channel to *any* endpoint (a human queue or an agent/bot), you *must* use an 'Omni-Channel flow'. This flow acts as the router. It receives the new message and 'routes' it to the specified 'agent'."
+            },
+            {
+                question: "Which best practice should the company follow to avoid modifying CRM data while running tests in the Testing Center?",
+                options: [
+                    "A. Use the Testing Center only in the sandbox environment.",
+                    "B. Limit the number of test cases to 50 per test to minimize data changes.",
+                    "C. Run tests in the production environment to ensure real-time data accuracy."
+                ],
+                correctAnswer: "A. Use the Testing Center only in the sandbox environment.",
+                explanation: "This is a critical safety best practice. The 'Testing Center' will execute agent actions, which *can* create, update, or delete CRM data. To 'avoid modifying' production data, you must 'use the Testing Center only in the sandbox environment'."
+            },
+            {
+                question: "Universal Containers needs to restrict access to refund processing actions so only customers with Active account status can initiate refunds. How should an Agentforce Specialist apply the restriction deterministically?",
+                options: [
+                    "A. Create a Flex Prompt Template that has instructions to check for account status.",
+                    "B. Include step by step instructions at the topic level and action level...",
+                    "C. Create a context variable for the account status field and apply a conditional filter AccountStatus equals \"Active\" to refund actions."
+                ],
+                correctAnswer: "C. Create a context variable for the account status field and apply a conditional filter AccountStatus equals \"Active\" to refund actions.",
+                explanation: "This is another 'deterministic' control question. You cannot use instructions (A, B) for rules that *must* be followed. The only deterministic method is to 'create a context variable' for 'account status' and 'apply a conditional filter' to the 'refund actions'. The actions *cannot run* if the filter isn't met."
+            },
+            {
+                question: "Coral Cloud Resorts needs to ensure its booking agent executes actions in a specific sequence: 1) retrieve sessions, 2) verify eligibility, 3) create booking... The current implementation allows the LLM to execute these in any order. Which approach should be implemented?",
+                options: [
+                    "A. Configure topic... instructions with priority levels and sequence indicators...",
+                    "B. Write comprehensive topic instructions detailing the exact sequence of actions...",
+                    "C. Create custom variables that store completion status for each step, then implement conditional filters on subsequent actions..."
+                ],
+                correctAnswer: "C. Create custom variables that store completion status for each step, then implement conditional filters on subsequent actions...",
+                explanation: "This is a deterministic *sequence* question. You cannot use instructions (A, B) to force a specific order. The only way to ensure 'deterministic execution order' is to create a chain using 'custom variables' (e.t., `step1_complete = true`) and 'conditional filters' (e.g., Action 2 *requires* `step1_complete = true` to run)."
+            },
+            {
+                question: "UC stores case details in several custom fields and custom objects related to the case... Which best practice should UC follow to grant access to this information for the Agentforce Service Agent?",
+                options: [
+                    "A. Create a new permission set with the Einstein Agent License and enable Read access... and assign it to the Agentforce Service Agent user.",
+                    "B. Update the Object and Field access in the Einstein Agent User Profile so that the Agentforce Service Agents will always get the necessary access.",
+                    "C. Update the Object and Field access in the AgentforceServiceAgentUserPsg permission set group that is already assigned..."
+                ],
+                correctAnswer: "C. Update the Object and Field access in the AgentforceServiceAgentUserPsg permission set group that is already assigned...",
+                explanation: "This is a specific, 'best practice' permissions question. The 'Agentforce Service Agent' user is automatically assigned the 'AgentforceServiceAgentUserPsg' (Permission Set Group). The correct, cleanest way to grant it more access is to *modify this existing permission set group* (or a permission set within it)."
+            },
+            {
+                question: "Cloud Kicks wants to integrate its agent with its custom website. The goal is for customers to interact with the custom agent chat interface. Which approach provides the framework for the custom web application to communicate with the agent?",
+                options: [
+                    "A. Agent API",
+                    "B. Agent to Agent (A2A)",
+                    "C. Model Context Protocol (MCP)"
+                ],
+                correctAnswer: "A. Agent API",
+                explanation: "To connect a 'custom website' (a custom front-end) to the Salesforce Agentforce backend, you must use the 'Agent API'. This API provides the necessary endpoints to send messages, receive responses, and manage the conversation session."
+            },
+            {
+                question: "UC has registered an external service and created a template-triggered prompt flow that invokes the external service... UC now needs to make the response data... usable inside a prompt template as a merge field. How?",
+                options: [
+                    "A. Use External Service Record merge fields.",
+                    "B. Convert the JSON to an XML merge field.",
+                    "C. Use the 'Add Prompt Instructions' flow element."
+                ],
+                correctAnswer: "A. Use External Service Record merge fields.",
+                explanation: "When a prompt-triggered flow calls an 'External Service', the response data from that service is automatically made available back in the Prompt Builder. You can access this data using the 'External Service Record' merge fields in the resource picker."
+            },
+            {
+                question: "Coral Cloud Resorts is uploading thousands of new HTML knowledge articles files... To ensure Agentforce retrieves accurate responses quickly, which chunking strategy should be used when creating a new index?",
+                options: [
+                    "A. Semantic based passage extraction",
+                    "B. Section aware chunking",
+                    "C. Conversation-based chunking"
+                ],
+                correctAnswer: "B. Section aware chunking",
+                explanation: "The files are 'HTML knowledge articles'. HTML has clear structural tags (like `<h1>`, `<h2>`, `<p>`). 'Section aware chunking' is the best strategy as it is designed to use this HTML structure to create logical, context-aware chunks, which leads to more accurate retrieval."
+            },
+            {
+                question: "An Agentforce Specialist needs to enable the use of Sales Email prompt templates for the sales team... which steps should the Specialist take to ensure the sales team can use these templates?",
+                options: [
+                    "A. Assign the Prompt Template Manager permission set and enable Sales Emails in Setup.",
+                    "B. Assign the Data Cloud Admin permission set and enable Sales Emails in Setup.",
+                    "C. Assign the Prompt Template User permission set and enable Sales Emails in Setup."
+                ],
+                correctAnswer: "C. Assign the Prompt Template User permission set and enable Sales Emails in Setup.",
+                explanation: "This requires two steps: 1) Users must have the permission to *use* templates, which is the 'Prompt Template User' permission set. 2) The 'Sales Emails' feature itself must be turned on for the org, which is done in Setup."
+            },
+            {
+                question: "Universal Containers (UC) wants to ensure its compliance team can retrieve exact matches of policy clause numbers from a structured legal document library. Which search type should UC implement?",
+                options: [
+                    "A. Use semantic search to interpret synonyms of clauses dynamically.",
+                    "B. Use hybrid search to blend keyword and semantic recall.",
+                    "C. Use keyword search for exact term matching on structured fields like clause numbers."
+                ],
+                correctAnswer: "C. Use keyword search for exact term matching on structured fields like clause numbers.",
+                explanation: "The requirement is for 'exact matches' of 'structured' data (policy clause 'numbers'). This is the classic use case for 'keyword search', which prioritizes 'exact term matching'. Semantic (A) or hybrid (B) would be worse, as they might find 'similar' but not *exact* numbers."
+            },
+            {
+                question: "Universal Containers (UC) is preparing and defining success criteria for Agentforce Testing Center test cases. Which details should UC specify as the expected output to ensure the tests accurately reflect the agent's functionality?",
+                options: [
+                    "A. Expected Topic API Name",
+                    "B. Expected Flow API Name",
+                    "C. Expected Prompt Template Name"
+                ],
+                correctAnswer: "A. Expected Topic API Name",
+                explanation: "The most fundamental 'success criteria' for a test case is to validate that the agent understood the user's intent. This is done by specifying the 'Expected Topic API Name' that the agent *should* have selected for that user's utterance."
+            },
+            {
+                question: "Which scenario best illustrates the use of Model Context Protocol (MCP) in an enterprise Al deployment?",
+                options: [
+                    "A. A sales agent discovering other agents' capabilities using Agent Cards",
+                    "B. A customer service agent engaging another agent in real time conversation to resolve tickets",
+                    "C. A legal assistant agent using MCP to dynamically find a document classification API to analyze case files"
+                ],
+                correctAnswer: "C. A legal assistant agent using MCP to dynamically find a document classification API to analyze case files",
+                explanation: "The 'Model Context Protocol (MCP)' is the framework for an agent to 'dynamically find' and *use* other *models* or *APIs* (like a 'document classification API'). Scenarios A and B (agent-to-agent conversation) are handled by the A2A protocol."
+            },
+            {
+                question: "How does Agentforce select the correct action to resolve a user's request?",
+                options: [
+                    "A. Each topic contains a list of the matching action's user utterances...",
+                    "B. The reasoning engine identifies the agent action to be executed by its name and action input instructions.",
+                    "C. The large language model (LLM) selects the right topic and action, if they exist. If there are no matches, the LLM attempts to answer the user's request."
+                ],
+                correctAnswer: "C. The large language model (LLM) selects the right topic and action, if they exist. If there are no matches, the LLM attempts to answer the user's request.",
+                explanation: "This is the most complete description. The 'LLM' (as the reasoning engine) 'selects the right topic and action'. If it 'finds no matches' for a pre-built action, it 'attempts to answer the user's request' generatively (the fallback)."
+            },
+            {
+                question: "Universal Containers is setting up the data library configuration within the Agentforce Builder. What is true regarding Agentforce Data Libraries?",
+                options: [
+                    "A. An agent can have only one data library assigned to it.",
+                    "B. Only data library owners can assign it to the agent.",
+                    "C. Each data category can only have one data library."
+                ],
+                correctAnswer: "A. An agent can have only one data library assigned to it.",
+                explanation: "This is a key architectural rule of Agentforce. A 'Data Library' is the container for all the knowledge an agent can access. An 'agent can have only one data library assigned to it'."
+            },
+            {
+                question: "The Agentforce Specialist for Cloud Kicks wants to create an agent that will allow the sales staff to schedule their daily tasks, and assist in providing detailed explanations behind prices and deals... Which type of agent should the Specialist create?",
+                options: [
+                    "A. Service Agent",
+                    "B. Employee Agent",
+                    "C. Sales Agent"
+                ],
+                correctAnswer: "B. Employee Agent",
+                explanation: "The agent is for 'sales staff' (i.e., *internal employees*). It helps them 'schedule their daily tasks' and get internal information. This is a classic 'Employee Agent' use case, designed to help employees be more productive. (Sales Agent is for external customer-facing sales)."
+            }
+        ];
+
+
+let currentIndex = 0;
+let score = 0;
+
+const state = quizData.map(() => ({
+  selected: null,
+  submitted: false,
+  correct: false
+}));
+
+const qText = document.getElementById("question-text");
+const opts = document.getElementById("options-container");
+const submitBtn = document.getElementById("submit-button");
+const nextBtn = document.getElementById("next-button");
+const progressText = document.getElementById("progress-text");
+const progressBar = document.getElementById("progress-bar");
+const explanationArea = document.getElementById("explanation-area");
+const feedbackText = document.getElementById("feedback-text");
+const correctAnswerText = document.getElementById("correct-answer-text");
+const explanationText = document.getElementById("explanation-text");
+const grid = document.getElementById("question-grid");
+
+function renderGrid() {
+  grid.innerHTML = "";
+  state.forEach((s, i) => {
+    const btn = document.createElement("button");
+    btn.textContent = i + 1;
+    btn.className = "q-btn";
+    if (i === currentIndex) btn.classList.add("active");
+    if (s.submitted) btn.classList.add(s.correct ? "correct" : "wrong");
+    btn.onclick = () => {
+      currentIndex = i;
+      renderQuestion();
+    };
+    grid.appendChild(btn);
+  });
+}
+
+function renderQuestion() {
+  const q = quizData[currentIndex];
+  const s = state[currentIndex];
+
+  qText.textContent = q.question;
+  opts.innerHTML = "";
+  explanationArea.classList.add("hidden");
+
+  q.options.forEach(opt => {
+    const id = Math.random().toString(36);
+    const radio = document.createElement("input");
+    radio.type = "radio";
+    radio.name = "opt";
+    radio.id = id;
+    radio.className = "option-radio";
+    radio.checked = s.selected === opt;
+
+    const label = document.createElement("label");
+    label.htmlFor = id;
+    label.className = "option-label";
+    label.textContent = opt;
+
+    if (s.submitted) {
+      if (opt === q.correctAnswer) label.classList.add("option-correct");
+      else if (opt === s.selected) label.classList.add("option-incorrect");
+      radio.disabled = true;
+    }
+
+    radio.onchange = () => s.selected = opt;
+
+    opts.append(radio, label);
+  });
+
+  progressText.textContent = `Question ${currentIndex + 1} of ${quizData.length}`;
+  progressBar.style.width = `${((currentIndex + 1) / quizData.length) * 100}%`;
+
+  submitBtn.disabled = s.submitted;
+  submitBtn.classList.toggle("hidden", s.submitted);
+  nextBtn.classList.toggle("hidden", !s.submitted);
+
+  if (s.submitted) {
+    explanationArea.classList.remove("hidden");
+    feedbackText.textContent = s.correct ? "Correct!" : "Incorrect";
+    correctAnswerText.textContent = q.correctAnswer;
+    explanationText.textContent = q.explanation;
+  }
+
+  renderGrid();
+}
+
+submitBtn.onclick = () => {
+  const s = state[currentIndex];
+  if (!s.selected) return;
+
+  s.submitted = true;
+  if (s.selected === quizData[currentIndex].correctAnswer) {
+    s.correct = true;
+    score++;
+  }
+  renderQuestion();
+};
+
+nextBtn.onclick = () => {
+  if (currentIndex < quizData.length - 1) {
+    currentIndex++;
+    renderQuestion();
+  }
+};
+
+renderQuestion();
+</script>
+
+</body>
+</html>
